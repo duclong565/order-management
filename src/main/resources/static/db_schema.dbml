@@ -1,0 +1,232 @@
+enum order_status {
+  PENDING
+  CONFIRMED
+  PICKING
+  SHIPPING
+  DELIVERED
+  CANCELLED
+  FAILED
+  RETURNING
+  REATTEMPT
+}
+
+enum payment_method_type {
+  VNPAY
+  MOMO
+  STRIPE
+  CASH
+}
+
+enum payment_status {
+  UNPAID
+  AWAITING_PAYMENT
+  PAID
+}
+
+enum user_role {
+  ADMIN
+  CUSTOMER
+  SELLER
+  DELIVERY_PERSON
+}
+
+enum carrier_type {
+  GIAOHANGNHANH
+  VIETTELPOST
+}
+
+enum discount_type {
+  PERCENT
+  FIXED
+}
+
+table users {
+  id uuid [pk]
+  username varchar [unique]
+  email varchar [unique]
+  password varchar
+  role user_role
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table payment_methods {
+  id uuid [pk]
+  name varchar
+  description text
+  type payment_method_type
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table orders {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  status order_status
+  discount_id uuid [ref: > discounts.id]
+  discount_value decimal
+  subtotal_price decimal
+  shipping_fee decimal
+  total_price decimal
+  payment_method_id uuid [ref: > payment_methods.id]
+  payment_status payment_status
+  carrier_id uuid [ref: > carriers.id]
+  tracking_number varchar [unique]
+  estimated_delivery_date timestamp
+  sender_address_id uuid [ref: > addresses.id]
+  sender_address varchar
+  recipient_address_id uuid [ref: > addresses.id]
+  recipient_address varchar
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table carriers {
+  id uuid [pk]
+  name varchar
+  description text
+  type carrier_type
+  address_id uuid [ref: > addresses.id]
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table addresses {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  line1 varchar
+  line2 varchar
+  city varchar
+  state varchar
+  country varchar
+  zip_code varchar
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table discounts {
+  id uuid [pk]
+  name varchar
+  description text
+  value decimal
+  type discount_type
+  start_date timestamp
+  end_date timestamp
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table order_items {
+  id uuid [pk]
+  order_id uuid [ref: > orders.id]
+  product_variant_id uuid [ref: > product_variants.id]
+  quantity int
+  unit_price decimal
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table carts {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  discount_id uuid [ref: > discounts.id]
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table cart_items {
+  id uuid [pk]
+  product_variant_id uuid [ref: > product_variants.id]
+  cart_id uuid [ref: > carts.id]
+  quantity int
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table products {
+  id uuid [pk]
+  name varchar
+  description text
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table inventories {
+  id uuid [pk]
+  product_variant_id uuid [ref: > product_variants.id]
+  warehouse_id uuid [ref: > warehouses.id]
+  quantity int
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table warehouses {
+  id uuid [pk]
+  name varchar
+  description text
+  address_id uuid [ref: > addresses.id]
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table product_variants {
+  id uuid [pk]
+  product_id uuid [ref: > products.id]
+  name varchar
+  price decimal
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
+
+table tracking_logs {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  order_id uuid [ref: > orders.id]
+  status order_status
+  location varchar
+  note varchar
+  created_at timestamp
+  created_by varchar
+  updated_at timestamp
+  updated_by varchar
+  deleted tinyint
+}
