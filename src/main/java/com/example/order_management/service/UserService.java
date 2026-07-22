@@ -5,20 +5,17 @@ import com.example.order_management.dto.UserResponse;
 import com.example.order_management.entity.User;
 import com.example.order_management.exception.BusinessException;
 import com.example.order_management.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     public UserResponse createUser(CreateUserRequest request) {
 
