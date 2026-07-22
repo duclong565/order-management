@@ -1,19 +1,24 @@
 package com.example.order_management.config;
 
+import com.example.order_management.entity.Address;
 import com.example.order_management.entity.Cart;
 import com.example.order_management.entity.CartItem;
 import com.example.order_management.entity.Discount;
 import com.example.order_management.entity.DiscountType;
 import com.example.order_management.entity.Inventory;
+import com.example.order_management.entity.PaymentMethod;
+import com.example.order_management.entity.PaymentMethodType;
 import com.example.order_management.entity.Product;
 import com.example.order_management.entity.ProductVariant;
 import com.example.order_management.entity.User;
 import com.example.order_management.entity.UserRole;
 import com.example.order_management.entity.Warehouse;
+import com.example.order_management.repository.AddressRepository;
 import com.example.order_management.repository.CartItemRepository;
 import com.example.order_management.repository.CartRepository;
 import com.example.order_management.repository.DiscountRepository;
 import com.example.order_management.repository.InventoryRepository;
+import com.example.order_management.repository.PaymentMethodRepository;
 import com.example.order_management.repository.ProductRepository;
 import com.example.order_management.repository.ProductVariantRepository;
 import com.example.order_management.repository.UserRepository;
@@ -42,16 +47,60 @@ class DataSeeder {
     private final DiscountRepository discountRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final AddressRepository addressRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     @Bean
     CommandLineRunner seedData() {
         return args -> {
             seedUsers();
+            seedAddresses();
             seedCatalog();
             seedWarehouseAndInventory();
             seedDiscounts();
+            seedPaymentMethods();
             seedCart();
         };
+    }
+
+    private void seedAddresses() {
+        if (addressRepository.count() > 0) {
+            return;
+        }
+
+        User admin = userRepository.findByUsername("admin").orElseThrow();
+
+        Address address = new Address();
+        address.setUser(admin);
+        address.setLine1("123 Nguyen Hue");
+        address.setLine2("Tang 5");
+        address.setCity("Ho Chi Minh");
+        address.setState("Ho Chi Minh");
+        address.setCountry("Vietnam");
+        address.setZipCode("700000");
+        addressRepository.save(address);
+
+        System.out.println("Seeded 1 address for admin");
+    }
+
+    private void seedPaymentMethods() {
+        if (paymentMethodRepository.count() > 0) {
+            return;
+        }
+
+        PaymentMethod cod = new PaymentMethod();
+        cod.setName("COD");
+        cod.setDescription("Thanh toan khi nhan hang");
+        cod.setType(PaymentMethodType.CASH);
+        paymentMethodRepository.save(cod);
+
+        PaymentMethod vnpay = new PaymentMethod();
+        vnpay.setName("VNPay");
+        vnpay.setDescription("Thanh toan qua cong VNPay");
+        vnpay.setType(PaymentMethodType.VNPAY);
+        paymentMethodRepository.save(vnpay);
+
+        System.out.println("Seeded 2 payment methods: COD, VNPay");
     }
 
     private void seedUsers() {
