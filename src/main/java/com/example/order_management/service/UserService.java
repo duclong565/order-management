@@ -1,15 +1,19 @@
 package com.example.order_management.service;
 
+import com.example.order_management.dto.ChangePasswordRequest;
 import com.example.order_management.dto.CreateUserRequest;
 import com.example.order_management.dto.UserResponse;
 import com.example.order_management.entity.User;
 import com.example.order_management.exception.BusinessException;
+import com.example.order_management.exception.ResourceNotFoundException;
 import com.example.order_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -50,5 +54,17 @@ public class UserService {
                 user.getRole(),
                 user.getCreatedAt()
         );
+    }
+
+    @Transactional
+    public void changePassword(UUID userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(request.oldPassword(), user.getPassword())) {
+            throw new BusinessException("Old password doesn't match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
     }
 }

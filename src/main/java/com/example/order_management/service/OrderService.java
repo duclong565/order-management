@@ -1,6 +1,7 @@
 package com.example.order_management.service;
 
 import com.example.order_management.dto.OrderItemResponse;
+import com.example.order_management.dto.OrderListItemResponse;
 import com.example.order_management.dto.OrderResponse;
 import com.example.order_management.dto.PlaceOrderRequest;
 import com.example.order_management.entity.*;
@@ -147,5 +148,29 @@ public class OrderService {
         cartRepository.save(cart);
 
         return toResponse(savedOrder, orderItems, paymentMethod);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderListItemResponse> getMyOrders(UUID userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(o -> new OrderListItemResponse(
+                        o.getId(),
+                        o.getStatus(),
+                        o.getPaymentStatus(),
+                        o.getTotalPrice(),
+                        o.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getMyOrder(UUID userId, UUID orderId) {
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found for user: " + userId));
+
+        List<OrderItem> items = orderItemRepository.findByOrderIdWithVariant(orderId);
+
+        return toResponse(order, items, order.getPaymentMethod());
     }
 }

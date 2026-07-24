@@ -25,7 +25,7 @@ public class CartController {
 
     @GetMapping("/me")
     public ResponseEntity<CartResponse> getMyCart(@AuthenticationPrincipal CustomUserDetails principal) {
-        UUID uuid = principal.getUser().getId();
+        UUID uuid = principal.user().getId();
         return ResponseEntity.ok(cartService.getMyCart(uuid));
     }
 
@@ -35,7 +35,7 @@ public class CartController {
             @PathVariable UUID cartItemId,
             @Valid @RequestBody UpdateCartItemRequest request
             ) {
-        UUID userId = principal.getUser().getId();
+        UUID userId = principal.user().getId();
         return ResponseEntity.ok(cartService.updateItemQuantity(userId, cartItemId, request.quantity()));
     }
 
@@ -44,7 +44,7 @@ public class CartController {
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable UUID cartItemId
     ) {
-        UUID userId = principal.getUser().getId();
+        UUID userId = principal.user().getId();
         return ResponseEntity.ok(cartService.removeItem(userId, cartItemId));
     }
 
@@ -53,7 +53,7 @@ public class CartController {
             @AuthenticationPrincipal CustomUserDetails principal,
             @Valid @RequestBody ApplyDiscountRequest request
             ) {
-        UUID userId = principal.getUser().getId();
+        UUID userId = principal.user().getId();
         return ResponseEntity.ok(cartService.applyDiscount(userId, request.discountId()));
     }
 
@@ -61,7 +61,7 @@ public class CartController {
     public ResponseEntity<OrderSummaryResponse> removeDiscount(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        UUID userId = principal.getUser().getId();
+        UUID userId = principal.user().getId();
         return ResponseEntity.ok(cartService.removeDiscount(userId));
     }
 
@@ -69,7 +69,7 @@ public class CartController {
     public ResponseEntity<OrderSummaryResponse> getOrderSummary(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        UUID userId = principal.getUser().getId();
+        UUID userId = principal.user().getId();
         return ResponseEntity.ok(cartService.getOrderSummary(userId));
     }
 }

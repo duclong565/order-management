@@ -1,5 +1,6 @@
 package com.example.order_management.controller;
 
+import com.example.order_management.dto.OrderListItemResponse;
 import com.example.order_management.dto.OrderResponse;
 import com.example.order_management.dto.PlaceOrderRequest;
 import com.example.order_management.security.CustomUserDetails;
@@ -9,11 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,9 +24,29 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponse> placeOrder(@AuthenticationPrincipal CustomUserDetails user,
                                                     @Valid @RequestBody PlaceOrderRequest request) {
-        UUID userId = user.getUser().getId();
+        UUID userId = user.user().getId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(orderService.placeOrder(userId, request));
     }
 
+
+    @GetMapping
+    public ResponseEntity<List<OrderListItemResponse>> getMyOrders(
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(orderService.getMyOrders(principal.user().getId()));
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderResponse> getMyOrder(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable UUID orderId
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(orderService.getMyOrder(
+                        principal.user().getId(),
+                        orderId
+                ));
+    }
 }
