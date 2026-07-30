@@ -67,7 +67,7 @@ public class CartService {
     }
 
     @Transactional
-    public CartResponse updateItemQuantity(UUID userId, UUID cartItemId, Integer quantity) {
+    public void updateItemQuantity(UUID userId, UUID cartItemId, Integer quantity) {
 
         CartItem cartItem = cartItemRepository.findByIdAndCartUserId(cartItemId, userId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.CART_ITEM_NOT_FOUND));
@@ -82,16 +82,13 @@ public class CartService {
 
         cartItem.setQuantity(quantity);
         cartItemRepository.save(cartItem);
-
-        return getMyCart(userId);
     }
 
     @Transactional
-    public CartResponse removeItem(UUID userId, UUID cartItemId) {
+    public void removeItem(UUID userId, UUID cartItemId) {
         CartItem cartItem = cartItemRepository.findByIdAndCartUserId(cartItemId, userId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.CART_ITEM_NOT_FOUND));
         cartItemRepository.delete(cartItem);
-        return getMyCart(userId);
     }
 
     @Transactional(readOnly = true)

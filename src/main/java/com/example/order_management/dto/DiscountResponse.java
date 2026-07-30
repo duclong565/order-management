@@ -1,6 +1,6 @@
 package com.example.order_management.dto;
 
-import com.example.order_management.entity.DiscountType;
+import com.example.order_management.common.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.Instant;

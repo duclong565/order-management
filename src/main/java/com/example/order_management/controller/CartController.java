@@ -30,23 +30,26 @@ public class CartController {
     }
 
     @PatchMapping("/items/{cartItemId}")
-    public ResponseEntity<BaseResponse<CartResponse>> updateItemQuantity(
+    public ResponseEntity<BaseResponse<Void>> updateItemQuantity(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable UUID cartItemId,
             @Valid @RequestBody UpdateCartItemRequest request
             ) {
         UUID userId = principal.user().getId();
-        return ResponseEntity.ok(BaseResponse.success(
-                cartService.updateItemQuantity(userId, cartItemId, request.quantity())));
+        cartService.updateItemQuantity(userId, cartItemId, request.quantity());
+
+        return ResponseEntity.ok(BaseResponse.success(null, "Cart Item Updated Successfully"));
     }
 
     @DeleteMapping("/items/{cartItemId}")
-    public ResponseEntity<BaseResponse<CartResponse>> removeItem(
+    public ResponseEntity<BaseResponse<Void>> removeItem(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable UUID cartItemId
     ) {
         UUID userId = principal.user().getId();
-        return ResponseEntity.ok(BaseResponse.success(cartService.removeItem(userId, cartItemId)));
+        cartService.removeItem(userId, cartItemId);
+
+        return ResponseEntity.ok(BaseResponse.success(null, "Cart Item Removed Successfully"));
     }
 
     @GetMapping("/summary")

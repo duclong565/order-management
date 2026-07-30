@@ -1,6 +1,6 @@
 package com.example.order_management.dto;
 
-import com.example.order_management.entity.OrderStatus;
+import com.example.order_management.common.OrderStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 

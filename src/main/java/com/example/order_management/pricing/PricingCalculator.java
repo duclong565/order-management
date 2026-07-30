@@ -18,11 +18,15 @@ import java.util.List;
 @Component
 public class PricingCalculator {
 
-    @Value("${app.low-stock-threshold}")
-    private int lowStockThreshold;
+    private final int lowStockThreshold;
+    private final BigDecimal shippingFee;
 
-    @Value("${app.shipping-fee}")
-    private BigDecimal shippingFee;
+    public PricingCalculator(@Value("${app.low-stock-threshold}") int lowStockThreshold,
+                             @Value("${app.shipping-fee}") BigDecimal shippingFee) {
+        this.lowStockThreshold = lowStockThreshold;
+        this.shippingFee = shippingFee;
+    }
+
 
     public void validateDiscountActive(Discount discount) {
         Instant now = Instant.now();

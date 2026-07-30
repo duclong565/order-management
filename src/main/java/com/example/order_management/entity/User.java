@@ -1,5 +1,7 @@
 package com.example.order_management.entity;
 
+import com.example.order_management.common.UserRole;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

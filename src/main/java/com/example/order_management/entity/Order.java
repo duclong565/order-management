@@ -1,5 +1,8 @@
 package com.example.order_management.entity;
 
+import com.example.order_management.common.OrderStatus;
+import com.example.order_management.common.PaymentStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -1,7 +1,7 @@
 package com.example.order_management.dto;
 
-import com.example.order_management.entity.OrderStatus;
-import com.example.order_management.entity.PaymentStatus;
+import com.example.order_management.common.OrderStatus;
+import com.example.order_management.common.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;

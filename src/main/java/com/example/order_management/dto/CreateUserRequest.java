@@ -1,6 +1,6 @@
 package com.example.order_management.dto;
 
-import com.example.order_management.entity.UserRole;
+import com.example.order_management.common.UserRole;
 import jakarta.validation.constraints.*;
 
 //chuyển thành class

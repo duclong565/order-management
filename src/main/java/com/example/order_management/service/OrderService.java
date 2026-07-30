@@ -2,6 +2,8 @@ package com.example.order_management.service;
 
 import com.example.order_management.dto.*;
 import com.example.order_management.entity.*;
+import com.example.order_management.common.OrderStatus;
+import com.example.order_management.common.PaymentStatus;
 import com.example.order_management.common.ErrorCode;
 import com.example.order_management.exception.ApplicationException;
 import com.example.order_management.pricing.PricingCalculator;
