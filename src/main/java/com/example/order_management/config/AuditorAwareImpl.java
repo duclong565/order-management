@@ -13,6 +13,8 @@ public class AuditorAwareImpl implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
+        //lấy tt người dùng để lấy authen ng dùng
+        //thread context độc lập
         Authentication auth =
                 SecurityContextHolder.getContext().getAuthentication();
 

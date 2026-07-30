@@ -1,12 +1,9 @@
 package com.example.order_management.service;
 
-import com.example.order_management.dto.OrderItemResponse;
-import com.example.order_management.dto.OrderListItemResponse;
-import com.example.order_management.dto.OrderResponse;
-import com.example.order_management.dto.PlaceOrderRequest;
+import com.example.order_management.dto.*;
 import com.example.order_management.entity.*;
-import com.example.order_management.exception.BusinessException;
-import com.example.order_management.exception.ResourceNotFoundException;
+import com.example.order_management.common.ErrorCode;
+import com.example.order_management.exception.ApplicationException;
 import com.example.order_management.pricing.PricingCalculator;
 import com.example.order_management.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +28,9 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final PricingCalculator  pricingCalculator;
+    private final TrackingLogRepository trackingLogRepository;
+    private final UserRepository userRepository;
+    private final DiscountRepository discountRepository;
 
     private void decreaseStock(List<CartItem> items) {
         for (CartItem item : items) {
@@ -38,7 +38,8 @@ public class OrderService {
             int updated = inventoryRepository.decreaseStock(variant.getId(), item.getQuantity());
 
             if (updated == 0) {
-                throw new BusinessException("Insufficient stock for variant: " + variant.getName());
+                throw new ApplicationException(ErrorCode.INSUFFICIENT_STOCK,
+                        "Insufficient stock for variant: " + variant.getName());
             }
         }
     }
@@ -100,16 +101,18 @@ public class OrderService {
     @Transactional
     public OrderResponse placeOrder(UUID userId, PlaceOrderRequest request) {
         Cart cart = cartRepository.findByUserIdForUpdate(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user: " + userId));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.CART_NOT_FOUND));
 
         List<CartItem> items = cartItemRepository.findByCartIdWithVariant(cart.getId());
-        if (items.isEmpty()) throw new BusinessException("Cart is empty for user: " + cart.getUser().getUsername());
+        if (items.isEmpty()) {
+            throw new ApplicationException(ErrorCode.CART_EMPTY);
+        }
 
         Address address = addressRepository.findByIdAndUserId(request.recipientAddressId(), userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found for user: " + request.recipientAddressId()));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ADDRESS_NOT_FOUND));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(request.paymentMethodId())
-                .orElseThrow(() -> new ResourceNotFoundException("Payment method not found: " + request.paymentMethodId()));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
 
         decreaseStock(items);
 
@@ -118,9 +121,14 @@ public class OrderService {
                         .multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Discount discount = cart.getDiscount();
-        BigDecimal discountAmount =
-                pricingCalculator.calculateDiscountAmount(discount, subtotal);
+        Discount discount = null;
+        if (request.discountId() != null) {
+            discount = discountRepository.findById(request.discountId())
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.DISCOUNT_NOT_FOUND));
+            pricingCalculator.validateDiscountActive(discount);
+        }
+
+        BigDecimal discountAmount = pricingCalculator.calculateDiscountAmount(discount, subtotal);
         BigDecimal shippingFee = pricingCalculator.getShippingFee();
         BigDecimal totalPrice = subtotal.subtract(discountAmount).add(shippingFee);
 
@@ -167,10 +175,41 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getMyOrder(UUID userId, UUID orderId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found for user: " + userId));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ORDER_NOT_FOUND));
 
         List<OrderItem> items = orderItemRepository.findByOrderIdWithVariant(orderId);
 
+        return toResponse(order, items, order.getPaymentMethod());
+    }
+
+    @Transactional
+    public OrderResponse updateStatus (UUID actorUserId, UUID orderId,
+                                       UpdateOrderStatusRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ORDER_NOT_FOUND));
+
+        OrderStatus current = order.getStatus();
+        OrderStatus target = request.status();
+
+        if (!current.canTransitionTo(target)) {
+            throw new ApplicationException(ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Invalid transition: " + current + " to " + target);
+        }
+
+        order.setStatus(target);
+
+        User actor = userRepository.findById(actorUserId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        TrackingLog log = new TrackingLog();
+        log.setOrder(order);
+        log.setUser(actor);
+        log.setStatus(target);
+        log.setLocation(request.location());
+        log.setNote(request.note());
+        trackingLogRepository.save(log);
+
+        List<OrderItem> items = orderItemRepository.findByOrderIdWithVariant(orderId);
         return toResponse(order, items, order.getPaymentMethod());
     }
 }

@@ -1,5 +1,6 @@
 package com.example.order_management.controller;
 
+import com.example.order_management.common.BaseResponse;
 import com.example.order_management.dto.OrderListItemResponse;
 import com.example.order_management.dto.OrderResponse;
 import com.example.order_management.dto.PlaceOrderRequest;
@@ -22,31 +23,31 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> placeOrder(@AuthenticationPrincipal CustomUserDetails user,
+    public ResponseEntity<BaseResponse<OrderResponse>> placeOrder(@AuthenticationPrincipal CustomUserDetails user,
                                                     @Valid @RequestBody PlaceOrderRequest request) {
         UUID userId = user.user().getId();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(orderService.placeOrder(userId, request));
+                .body(BaseResponse.success(orderService.placeOrder(userId, request)));
     }
 
 
     @GetMapping
-    public ResponseEntity<List<OrderListItemResponse>> getMyOrders(
+    public ResponseEntity<BaseResponse<List<OrderListItemResponse>>> getMyOrders(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(orderService.getMyOrders(principal.user().getId()));
+                .body(BaseResponse.success(orderService.getMyOrders(principal.user().getId())));
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderResponse> getMyOrder(
+    public ResponseEntity<BaseResponse<OrderResponse>> getMyOrder(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable UUID orderId
     ) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(orderService.getMyOrder(
+                .body(BaseResponse.success(orderService.getMyOrder(
                         principal.user().getId(),
                         orderId
-                ));
+                )));
     }
 }

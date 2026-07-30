@@ -25,14 +25,14 @@ public class Order extends BaseEntity {
     private User user;
 
     @Column(nullable = false, length = 20)
-    @Enumerated(EnumType.STRING)
-    private OrderStatus status = OrderStatus.PENDING;
+    @Enumerated(EnumType.STRING) //annotation cho JPA lưu kiểu dữ liệu enum dạng string không phải int, default là ordinal (0,1,2,...)
+    private OrderStatus status = OrderStatus.PENDING; //lưu "pending"
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "discount_id")
     private Discount discount;
 
-    @Column(name = "discount_value", precision = 12, scale = 2)
+    @Column(name = "discount_value", precision = 12, scale = 2) //số có tối đa 12 chữ số, 2 chữ số sau dấu phẩy
     private BigDecimal discountValue;
 
     @Column(name = "subtotal_price", nullable = false, precision = 12, scale = 2)

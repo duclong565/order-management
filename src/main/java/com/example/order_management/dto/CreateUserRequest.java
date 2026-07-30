@@ -3,6 +3,7 @@ package com.example.order_management.dto;
 import com.example.order_management.entity.UserRole;
 import jakarta.validation.constraints.*;
 
+//chuyển thành class
 public record CreateUserRequest(
         @NotBlank @Size(min = 3, max = 50) String username,
         @NotBlank @Email String email,

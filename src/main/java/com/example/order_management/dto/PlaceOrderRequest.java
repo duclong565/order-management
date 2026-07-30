@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record PlaceOrderRequest(
         @NotNull UUID recipientAddressId,
-        @NotNull UUID paymentMethodId
+        @NotNull UUID paymentMethodId,
+        UUID discountId
         ) {
 }

@@ -1,7 +1,7 @@
 package com.example.order_management.repository;
 
-import com.example.order_management.entity.Cart;
 import com.example.order_management.entity.CartItem;
+import com.example.order_management.dto.CartItemRow;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +21,17 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
     List<CartItem> findByCartIdWithVariant(@Param("cartId") UUID cartId);
 
     Optional<CartItem> findByIdAndCartUserId(UUID id, UUID userId);
+
+    @Query("""
+        select new com.example.order_management.dto.CartItemRow(
+            ci.id, v.id, p.name, v.name, v.price, ci.quantity,
+            coalesce(sum(i.quantity), 0L))
+        from CartItem ci
+        join ci.productVariant v
+        join v.product p
+        left join Inventory i on i.productVariant = v
+        where ci.cart.id = :cartId
+        group by ci.id, v.id, p.name, v.name, v.price, ci.quantity
+        """)
+    List<CartItemRow> findCartRows(@Param("cartId") UUID cartId);
 }

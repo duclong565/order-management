@@ -1,5 +1,6 @@
 package com.example.order_management.controller;
 
+import com.example.order_management.common.BaseResponse;
 import com.example.order_management.dto.DiscountResponse;
 import com.example.order_management.service.DiscountService;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ public class DiscountController {
     private final DiscountService  discountService;
 
     @GetMapping
-    public ResponseEntity<List<DiscountResponse>> getActiveDiscounts() {
-        return ResponseEntity.ok(discountService.getActiveDiscounts());
+    public ResponseEntity<BaseResponse<List<DiscountResponse>>> getActiveDiscounts() {
+        return ResponseEntity.ok(BaseResponse.success(discountService.getActiveDiscounts()));
     }
 }

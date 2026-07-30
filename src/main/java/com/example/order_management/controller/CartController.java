@@ -1,6 +1,6 @@
 package com.example.order_management.controller;
 
-import com.example.order_management.dto.ApplyDiscountRequest;
+import com.example.order_management.common.BaseResponse;
 import com.example.order_management.dto.CartResponse;
 import com.example.order_management.dto.OrderSummaryResponse;
 import com.example.order_management.dto.UpdateCartItemRequest;
@@ -24,52 +24,37 @@ public class CartController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<CartResponse> getMyCart(@AuthenticationPrincipal CustomUserDetails principal) {
+    public ResponseEntity<BaseResponse<CartResponse>> getMyCart(@AuthenticationPrincipal CustomUserDetails principal) {
         UUID uuid = principal.user().getId();
-        return ResponseEntity.ok(cartService.getMyCart(uuid));
+        return ResponseEntity.ok(BaseResponse.success(cartService.getMyCart(uuid)));
     }
 
     @PatchMapping("/items/{cartItemId}")
-    public ResponseEntity<CartResponse> updateItemQuantity(
+    public ResponseEntity<BaseResponse<CartResponse>> updateItemQuantity(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable UUID cartItemId,
             @Valid @RequestBody UpdateCartItemRequest request
             ) {
         UUID userId = principal.user().getId();
-        return ResponseEntity.ok(cartService.updateItemQuantity(userId, cartItemId, request.quantity()));
+        return ResponseEntity.ok(BaseResponse.success(
+                cartService.updateItemQuantity(userId, cartItemId, request.quantity())));
     }
 
     @DeleteMapping("/items/{cartItemId}")
-    public ResponseEntity<CartResponse> removeItem(
+    public ResponseEntity<BaseResponse<CartResponse>> removeItem(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable UUID cartItemId
     ) {
         UUID userId = principal.user().getId();
-        return ResponseEntity.ok(cartService.removeItem(userId, cartItemId));
-    }
-
-    @PatchMapping("/discount")
-    public ResponseEntity<OrderSummaryResponse> applyDiscount(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @Valid @RequestBody ApplyDiscountRequest request
-            ) {
-        UUID userId = principal.user().getId();
-        return ResponseEntity.ok(cartService.applyDiscount(userId, request.discountId()));
-    }
-
-    @DeleteMapping("/discount")
-    public ResponseEntity<OrderSummaryResponse> removeDiscount(
-            @AuthenticationPrincipal CustomUserDetails principal
-    ) {
-        UUID userId = principal.user().getId();
-        return ResponseEntity.ok(cartService.removeDiscount(userId));
+        return ResponseEntity.ok(BaseResponse.success(cartService.removeItem(userId, cartItemId)));
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<OrderSummaryResponse> getOrderSummary(
-            @AuthenticationPrincipal CustomUserDetails principal
+    public ResponseEntity<BaseResponse<OrderSummaryResponse>> getOrderSummary(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestParam(required = false) UUID discountId
     ) {
         UUID userId = principal.user().getId();
-        return ResponseEntity.ok(cartService.getOrderSummary(userId));
+        return ResponseEntity.ok(BaseResponse.success(cartService.getOrderSummary(userId, discountId)));
     }
 }

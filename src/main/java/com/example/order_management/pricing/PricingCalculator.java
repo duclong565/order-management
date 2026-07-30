@@ -1,22 +1,57 @@
 package com.example.order_management.pricing;
 
+import com.example.order_management.common.StockStatus;
+import com.example.order_management.entity.CartItem;
 import com.example.order_management.entity.Discount;
+import com.example.order_management.common.ErrorCode;
+import com.example.order_management.exception.ApplicationException;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-
-import static com.example.order_management.entity.DiscountType.FIXED;
-import static com.example.order_management.entity.DiscountType.PERCENT;
+import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Component
 public class PricingCalculator {
 
+    @Value("${app.low-stock-threshold}")
+    private int lowStockThreshold;
+
     @Value("${app.shipping-fee}")
     private BigDecimal shippingFee;
+
+    public void validateDiscountActive(Discount discount) {
+        Instant now = Instant.now();
+
+        if (discount.getStartDate() != null && now.isBefore(discount.getStartDate())) {
+            throw new ApplicationException(ErrorCode.DISCOUNT_NOT_ACTIVE);
+        }
+        if (discount.getEndDate() != null && now.isAfter(discount.getEndDate())) {
+            throw new ApplicationException(ErrorCode.DISCOUNT_EXPIRED);
+        }
+    }
+
+    public StockStatus resolveStockStatus(long stockQuantity, int wantedQuantity) {
+        if (stockQuantity <= 0 || wantedQuantity > stockQuantity) {
+            return StockStatus.OUT_OF_STOCK;
+        }
+        if (stockQuantity <= lowStockThreshold) {
+            return StockStatus.LIMITED_STOCK;
+        }
+        return StockStatus.IN_STOCK;
+    }
+
+    public BigDecimal calculateSubtotal(List<CartItem> cartItems) {
+        return cartItems.stream()
+                .map(i -> i.getProductVariant().getPrice()
+                        .multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    }
 
     public BigDecimal calculateDiscountAmount(Discount discount, BigDecimal subtotal) {
         if (discount == null) {

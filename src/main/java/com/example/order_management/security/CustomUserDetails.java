@@ -11,10 +11,11 @@ import java.util.List;
 
 public record CustomUserDetails(User user) implements UserDetails {
 
+    //preAuthorize tự thêm prefix ROLE_ ở đằng trước vậy nên overide hàm này phải thêm cả ROLE_
     @Override
     @NonNull
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())); //Simple granted authority đơn giản là return lại chuỗi
     }
 
     @Override

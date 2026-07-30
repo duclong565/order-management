@@ -1,34 +1,39 @@
 package com.example.order_management.exception;
 
-import com.example.order_management.dto.ErrorResponse;
-import org.springframework.http.HttpStatus;
+import com.example.order_management.common.BaseResponse;
+import com.example.order_management.common.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.time.Instant;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException e) {
-        ErrorResponse body = new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage(), Instant.now());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
-        ErrorResponse body = new ErrorResponse(HttpStatus.CONFLICT.value(), e.getMessage(), Instant.now());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    @ExceptionHandler(ApplicationException.class)
+    public ResponseEntity<BaseResponse<Void>> handleApplicationException(ApplicationException ex) {
+        ErrorCode ec = ex.getErrorCode();
+        return ResponseEntity.status(ec.getStatus())
+                .body(BaseResponse.error(ec.getCode(), ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
-        String msg = e.getBindingResult().getFieldErrors().stream().map(err -> err.getField() + ": " + err.getDefaultMessage()).collect(Collectors.joining(", "));
-        ErrorResponse body = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), msg, Instant.now());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    public ResponseEntity<BaseResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
+        String msg = ex.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        ErrorCode ec = ErrorCode.INVALID_REQUEST;
+        return ResponseEntity.status(ec.getStatus())
+                .body(BaseResponse.error(ec.getCode(), msg));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<BaseResponse<Void>> handleUnexpected(Exception ex) {
+        log.error("Unexpected error", ex);
+        ErrorCode ec = ErrorCode.INTERNAL_ERROR;
+        return ResponseEntity.status(ec.getStatus())
+                .body(BaseResponse.error(ec.getCode(), ec.getMessage()));  // KHONG lo ex.getMessage()
     }
 }

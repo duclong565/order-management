@@ -1,5 +1,6 @@
 package com.example.order_management.controller;
 
+import com.example.order_management.common.BaseResponse;
 import com.example.order_management.dto.ChangePasswordRequest;
 import com.example.order_management.dto.CreateUserRequest;
 import com.example.order_management.dto.UserResponse;
@@ -24,24 +25,24 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest createUserRequest) {
+    public ResponseEntity<BaseResponse<UserResponse>> createUser(@Valid @RequestBody CreateUserRequest createUserRequest) {
         UserResponse userResponse = userService.createUser(createUserRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(userResponse));
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
+    @PreAuthorize("hasRole('ADMIN')") // tự thêm prefix ROLE_ ở trước -> ROLE_ADMIN
+    public ResponseEntity<BaseResponse<List<UserResponse>>> getAllUsers() {
         List<UserResponse> userResponseList = userService.getAllUsers();
-        return ResponseEntity.status(HttpStatus.OK).body(userResponseList);
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(userResponseList));
     }
 
     @PatchMapping("/me/password")
-    public ResponseEntity<Void> changePassword(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @Valid @RequestBody ChangePasswordRequest request
+    public ResponseEntity<BaseResponse<Void>> changePassword(
+            @AuthenticationPrincipal CustomUserDetails principal, //Principal là chỉ object đang được xác thực/ danh tính
+            @Valid @RequestBody ChangePasswordRequest request //@valid là để kích hoạt validation ở dto
             ) {
         userService.changePassword(principal.user().getId(), request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(BaseResponse.success(null, "Password changed successfully"));
     }
 }

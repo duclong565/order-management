@@ -212,6 +212,8 @@ class DataSeeder {
         List<ProductVariant> variants = productVariantRepository.findAll();
         saveCartItem(savedCart, variants.get(0), 2);
         saveCartItem(savedCart, variants.get(1), 1);
+        saveCartItem(savedCart, variants.get(2), 1);
+        saveCartItem(savedCart, variants.get(3), 1);
 
         System.out.println("Seeded cart for admin with 2 items");
     }

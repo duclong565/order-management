@@ -1,24 +1,23 @@
 package com.example.order_management.service;
 
+import com.example.order_management.common.ErrorCode;
+import com.example.order_management.common.StockStatus;
 import com.example.order_management.dto.CartItemResponse;
+import com.example.order_management.dto.CartItemRow;
 import com.example.order_management.dto.CartResponse;
 import com.example.order_management.dto.OrderSummaryResponse;
 import com.example.order_management.entity.*;
-import com.example.order_management.exception.BusinessException;
-import com.example.order_management.exception.ResourceNotFoundException;
+import com.example.order_management.exception.ApplicationException;
 import com.example.order_management.pricing.PricingCalculator;
 import com.example.order_management.repository.CartItemRepository;
 import com.example.order_management.repository.CartRepository;
 import com.example.order_management.repository.DiscountRepository;
 import com.example.order_management.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,43 +30,34 @@ public class CartService {
     private final DiscountRepository discountRepository;
     private final PricingCalculator pricingCalculator;
 
-    @Value("${app.shipping-fee}")
-    private BigDecimal shippingFee;
-
     private Cart findCartByUserId(UUID userId) {
         return cartRepository.findByUserId(userId).orElseThrow(() ->
-                new ResourceNotFoundException("Cart not found for user: " + userId));
-
+                new ApplicationException(ErrorCode.CART_NOT_FOUND));
     }
 
-    private CartItemResponse toItemResponse(CartItem item) {
-        ProductVariant variant = item.getProductVariant();
-        BigDecimal lineTotal = variant.getPrice()
-                .multiply(BigDecimal.valueOf(item.getQuantity()));
+    private CartItemResponse toItemResponse(CartItemRow row) {
+        StockStatus status = pricingCalculator.resolveStockStatus(row.stockQuantity(), row.quantity());
+        Integer available = status == StockStatus.LIMITED_STOCK ? (int) row.stockQuantity() : null;
 
         return new CartItemResponse(
-                item.getId(),
-                variant.getId(),
-                variant.getProduct().getName(),
-                variant.getName(),
-                variant.getPrice(),
-                item.getQuantity(),
-                lineTotal
+                row.cartItemId(),
+                row.productVariantId(),
+                row.productName(),
+                row.variantName(),
+                row.unitPrice(),
+                row.quantity(),
+                status,
+                available
         );
     }
 
     private CartResponse buildCartResponse(Cart cart) {
-        List<CartItem> cartItem = cartItemRepository.findByCartIdWithVariant(cart.getId());
-
-        List<CartItemResponse> itemResponses = cartItem.stream()
+        List<CartItemResponse> items = cartItemRepository.findCartRows(cart.getId())
+                .stream()
                 .map(this::toItemResponse)
                 .toList();
 
-        BigDecimal totalPrice = itemResponses.stream()
-                .map(CartItemResponse::lineTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return new CartResponse(cart.getId(), cart.getUser().getId(), itemResponses, totalPrice);
+        return new CartResponse(cart.getId(), cart.getUser().getId(), items);
     }
 
     @Transactional(readOnly = true)
@@ -80,15 +70,14 @@ public class CartService {
     public CartResponse updateItemQuantity(UUID userId, UUID cartItemId, Integer quantity) {
 
         CartItem cartItem = cartItemRepository.findByIdAndCartUserId(cartItemId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.CART_ITEM_NOT_FOUND));
 
         UUID variantId = cartItem.getProductVariant().getId();
+        long availableStock = inventoryRepository.totalStock(variantId);
 
-        Inventory itemInventory = inventoryRepository.findByProductVariantId(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for variant: " + variantId));
-
-        if (itemInventory.getQuantity() < quantity) {
-            throw new BusinessException("Not enough stock. Available quantity: " + itemInventory.getQuantity() );
+        if (availableStock < quantity) {
+            throw new ApplicationException(ErrorCode.INSUFFICIENT_STOCK,
+                    "Insufficient stock. Available quantity: " + availableStock);
         }
 
         cartItem.setQuantity(quantity);
@@ -100,57 +89,31 @@ public class CartService {
     @Transactional
     public CartResponse removeItem(UUID userId, UUID cartItemId) {
         CartItem cartItem = cartItemRepository.findByIdAndCartUserId(cartItemId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.CART_ITEM_NOT_FOUND));
         cartItemRepository.delete(cartItem);
         return getMyCart(userId);
     }
 
-    @Transactional
-    public OrderSummaryResponse applyDiscount(UUID userId, UUID discountId) {
-        Cart cart = findCartByUserId(userId);
-
-        Discount discount = discountRepository.findById(discountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Discount not found: " + discountId));
-
-        Instant now = Instant.now();
-
-        if (discount.getStartDate() != null && now.isBefore(discount.getStartDate())) {
-            throw new BusinessException("Discount is not active yet");
-        }
-        if (discount.getEndDate() != null && now.isAfter(discount.getEndDate())) {
-            throw new BusinessException("Discount has expired");
-        }
-
-        cart.setDiscount(discount);
-        cartRepository.save(cart);
-        return getOrderSummary(userId);
-    }
-
-    @Transactional
-    public OrderSummaryResponse removeDiscount(UUID userId) {
-        Cart cart = findCartByUserId(userId);
-
-        cart.setDiscount(null);
-        cartRepository.save(cart);
-        return getOrderSummary(userId);
-    }
-
     @Transactional(readOnly = true)
-    public OrderSummaryResponse getOrderSummary(UUID userId) {
+    public OrderSummaryResponse getOrderSummary(UUID userId, UUID discountId) {
+        //Get items for calculation
         Cart cart = findCartByUserId(userId);
-        CartResponse cartResponse = buildCartResponse(cart);
-        BigDecimal subtotal = cartResponse.totalAmount();
+        List<CartItem> cartItems = cartItemRepository.findByCartIdWithVariant(cart.getId());
+        BigDecimal subtotal = pricingCalculator.calculateSubtotal(cartItems);
 
-        Discount discount = cart.getDiscount();
+        Discount discount = null;
+        if (discountId != null) {
+            discount = discountRepository.findById(discountId)
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.DISCOUNT_NOT_FOUND));
+            pricingCalculator.validateDiscountActive(discount);
+        }
+
+        BigDecimal shippingFee = pricingCalculator.getShippingFee();
         BigDecimal discountAmount = pricingCalculator.calculateDiscountAmount(discount, subtotal);
         BigDecimal totalPrice = subtotal.subtract(discountAmount).add(shippingFee);
 
         return new OrderSummaryResponse(
-                cart.getId(),
-                cartResponse.cartItems(),
                 subtotal,
-                discount != null ? discount.getId() : null,
-                discount != null ? discount.getName() : null,
                 discountAmount,
                 shippingFee,
                 totalPrice
