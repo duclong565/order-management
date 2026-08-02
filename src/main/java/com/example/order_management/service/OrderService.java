@@ -110,10 +110,10 @@ public class OrderService {
             throw new ApplicationException(ErrorCode.CART_EMPTY);
         }
 
-        Address address = addressRepository.findByIdAndUserId(request.recipientAddressId(), userId)
+        Address address = addressRepository.findByIdAndUserId(request.getRecipientAddressId(), userId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.ADDRESS_NOT_FOUND));
 
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(request.paymentMethodId())
+        PaymentMethod paymentMethod = paymentMethodRepository.findById(request.getPaymentMethodId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
 
         decreaseStock(items);
@@ -124,8 +124,8 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Discount discount = null;
-        if (request.discountId() != null) {
-            discount = discountRepository.findById(request.discountId())
+        if (request.getDiscountId() != null) {
+            discount = discountRepository.findById(request.getDiscountId())
                     .orElseThrow(() -> new ApplicationException(ErrorCode.DISCOUNT_NOT_FOUND));
             pricingCalculator.validateDiscountActive(discount);
         }
@@ -191,7 +191,7 @@ public class OrderService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.ORDER_NOT_FOUND));
 
         OrderStatus current = order.getStatus();
-        OrderStatus target = request.status();
+        OrderStatus target = request.getStatus();
 
         if (!current.canTransitionTo(target)) {
             throw new ApplicationException(ErrorCode.INVALID_STATUS_TRANSITION,
@@ -207,8 +207,8 @@ public class OrderService {
         log.setOrder(order);
         log.setUser(actor);
         log.setStatus(target);
-        log.setLocation(request.location());
-        log.setNote(request.note());
+        log.setLocation(request.getLocation());
+        log.setNote(request.getNote());
         trackingLogRepository.save(log);
 
         List<OrderItem> items = orderItemRepository.findByOrderIdWithVariant(orderId);

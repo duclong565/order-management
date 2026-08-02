@@ -1,12 +1,22 @@
 package com.example.order_management.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
-public record PlaceOrderRequest(
-        @NotNull UUID recipientAddressId,
-        @NotNull UUID paymentMethodId,
-        UUID discountId
-        ) {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PlaceOrderRequest {
+
+    @NotNull
+    private UUID recipientAddressId;
+    @NotNull
+    private UUID paymentMethodId;
+    private UUID discountId;
 }

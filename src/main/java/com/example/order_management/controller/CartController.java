@@ -36,7 +36,7 @@ public class CartController {
             @Valid @RequestBody UpdateCartItemRequest request
             ) {
         UUID userId = principal.user().getId();
-        cartService.updateItemQuantity(userId, cartItemId, request.quantity());
+        cartService.updateItemQuantity(userId, cartItemId, request.getQuantity());
 
         return ResponseEntity.ok(BaseResponse.success(null, "Cart Item Updated Successfully"));
     }

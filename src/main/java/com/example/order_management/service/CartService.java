@@ -36,16 +36,16 @@ public class CartService {
     }
 
     private CartItemResponse toItemResponse(CartItemRow row) {
-        StockStatus status = pricingCalculator.resolveStockStatus(row.stockQuantity(), row.quantity());
-        Integer available = status == StockStatus.LIMITED_STOCK ? (int) row.stockQuantity() : null;
+        StockStatus status = pricingCalculator.resolveStockStatus(row.getStockQuantity(), row.getQuantity());
+        Integer available = status == StockStatus.LIMITED_STOCK ? (int) row.getStockQuantity() : null;
 
         return new CartItemResponse(
-                row.cartItemId(),
-                row.productVariantId(),
-                row.productName(),
-                row.variantName(),
-                row.unitPrice(),
-                row.quantity(),
+                row.getCartItemId(),
+                row.getProductVariantId(),
+                row.getProductName(),
+                row.getVariantName(),
+                row.getUnitPrice(),
+                row.getQuantity(),
                 status,
                 available
         );

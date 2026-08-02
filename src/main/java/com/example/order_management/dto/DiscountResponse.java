@@ -1,18 +1,26 @@
 package com.example.order_management.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import com.example.order_management.common.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-public record DiscountResponse(
-        UUID id,
-        String name,
-        String description,
-        DiscountType type,
-        BigDecimal value,
-        Instant startDate,
-        Instant endDate
-) {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class DiscountResponse {
+
+    private UUID id;
+    private String name;
+    private String description;
+    private DiscountType type;
+    private BigDecimal value;
+    private Instant startDate;
+    private Instant endDate;
 }

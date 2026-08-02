@@ -1,5 +1,9 @@
 package com.example.order_management.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import com.example.order_management.common.OrderStatus;
 import com.example.order_management.common.PaymentStatus;
 
@@ -8,18 +12,22 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-public record OrderResponse(
-        UUID orderId,
-        OrderStatus status,
-        PaymentStatus paymentStatus,
-        List<OrderItemResponse> items,
-        BigDecimal subtotalPrice,
-        UUID discountId,
-        BigDecimal discountValue,
-        BigDecimal shippingFee,
-        BigDecimal totalPrice,
-        String recipientAddress,
-        String paymentMethodName,
-        Instant createdAt
-) {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class OrderResponse {
+
+    private UUID orderId;
+    private OrderStatus status;
+    private PaymentStatus paymentStatus;
+    private List<OrderItemResponse> items;
+    private BigDecimal subtotalPrice;
+    private UUID discountId;
+    private BigDecimal discountValue;
+    private BigDecimal shippingFee;
+    private BigDecimal totalPrice;
+    private String recipientAddress;
+    private String paymentMethodName;
+    private Instant createdAt;
 }

@@ -23,19 +23,19 @@ public class UserService {
 
     public UserResponse createUser(CreateUserRequest request) {
 
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new ApplicationException(ErrorCode.EMAIL_EXISTED);
         }
 
-        if (userRepository.existsByUsername(request.username())) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new ApplicationException(ErrorCode.USERNAME_EXISTED);
         }
 
         User user = new User();
-        user.setUsername(request.username());
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setEmail(request.email());
-        user.setRole(request.role());
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
+        user.setRole(request.getRole());
 
         User savedUser = userRepository.save(user);
 
@@ -61,10 +61,10 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
-        if (!passwordEncoder.matches(request.oldPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new ApplicationException(ErrorCode.WRONG_PASSWORD);
         }
 
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     }
 }
